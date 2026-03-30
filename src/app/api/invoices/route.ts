@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server"
 import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints"
-import { notion, NOTION_DATABASE_ID } from "@/lib/notion"
+import { NOTION_DATABASE_ID, queryDatabase } from "@/lib/notion"
 import { mapToInvoiceListItem } from "@/lib/notion-mapper"
 
 // GET /api/invoices - 견적서 목록 조회
 export async function GET() {
 	try {
-		const response = await notion.dataSources.query({
-			data_source_id: NOTION_DATABASE_ID,
+		const response = await queryDatabase(NOTION_DATABASE_ID, {
 			sorts: [{ property: "발행일", direction: "descending" }],
 		})
 
 		const invoices = response.results
-			.filter((page): page is PageObjectResponse => page.object === "page")
-			.map(mapToInvoiceListItem)
+			.filter((page: PageObjectResponse) => page.object === "page")
+			.map((page: PageObjectResponse) => mapToInvoiceListItem(page))
 
 		return NextResponse.json({ invoices })
 	} catch (error) {

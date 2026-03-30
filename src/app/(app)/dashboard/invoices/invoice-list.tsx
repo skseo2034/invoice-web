@@ -1,7 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { RefreshCw, ExternalLink, Copy } from "lucide-react"
+import { RefreshCw, ExternalLink, Copy, Download, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,8 +17,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { InvoiceStatusBadge } from "@/components/common/status-badge"
+import { handlePdfDownload } from "@/lib/download-pdf"
 import type { InvoiceListItem } from "@/types"
-import { getDummyInvoiceList } from "@/lib/dummy-data"
 
 // 원화 포맷팅
 function formatKRW(amount: number): string {
@@ -34,7 +35,13 @@ function formatDate(dateStr: string): string {
 }
 
 async function fetchInvoices(): Promise<InvoiceListItem[]> {
-	return getDummyInvoiceList()
+	const res = await fetch("/api/invoices")
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}))
+		throw new Error(body.error ?? "견적서 목록을 불러오는데 실패했습니다")
+	}
+	const { invoices } = await res.json()
+	return invoices
 }
 
 // 링크 복사 핸들러
@@ -42,6 +49,26 @@ function handleCopyLink(id: string) {
 	const url = `${window.location.origin}/invoices/${id}`
 	navigator.clipboard.writeText(url)
 	toast.success("링크가 복사되었습니다")
+}
+
+// 개별 행의 PDF 다운로드 버튼 (각각 독립 로딩 상태)
+function PdfDownloadButton({ invoiceId, invoiceNumber }: { invoiceId: string; invoiceNumber: string }) {
+	const [isDownloading, setIsDownloading] = useState(false)
+	return (
+		<Button
+			variant="ghost"
+			size="icon"
+			disabled={isDownloading}
+			onClick={() => handlePdfDownload(invoiceId, invoiceNumber, setIsDownloading)}
+			aria-label="PDF 다운로드"
+		>
+			{isDownloading ? (
+				<Loader2 className="size-4 animate-spin" />
+			) : (
+				<Download className="size-4" />
+			)}
+		</Button>
+	)
 }
 
 export function InvoiceList() {
@@ -118,7 +145,7 @@ export function InvoiceList() {
 					<RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 				</Button>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="overflow-x-auto">
 				<Table>
 					<TableHeader>
 						<TableRow>
@@ -141,7 +168,11 @@ export function InvoiceList() {
 								</TableCell>
 								<TableCell>{formatDate(invoice.issueDate)}</TableCell>
 								<TableCell className="text-right">
-									<div className="flex justify-end gap-2">
+									<div className="flex justify-end gap-1">
+										<PdfDownloadButton
+											invoiceId={invoice.id}
+											invoiceNumber={invoice.invoiceNumber}
+										/>
 										<Button
 											variant="ghost"
 											size="icon"

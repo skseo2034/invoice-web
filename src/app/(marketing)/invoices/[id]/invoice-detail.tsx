@@ -1,15 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Download, RefreshCw, FileEdit, Clock, Send, CheckCircle, XCircle } from "lucide-react"
+import { Download, RefreshCw, FileEdit, Clock, Send, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { InvoiceStatusBadge } from "@/components/common/status-badge"
 import { ISSUER_INFO } from "@/constants/invoice"
+import { handlePdfDownload } from "@/lib/download-pdf"
 import { cn } from "@/lib/utils"
 import type { Invoice, InvoiceStatus } from "@/types"
-import { getDummyInvoice } from "@/lib/dummy-data"
 
 // 원화 포맷팅
 function formatKRW(amount: number): string {
@@ -26,8 +27,12 @@ function formatDate(dateStr?: string): string {
 }
 
 async function fetchInvoice(id: string): Promise<Invoice> {
-	const invoice = getDummyInvoice(id)
-	if (!invoice) throw new Error("존재하지 않는 견적서입니다")
+	const res = await fetch(`/api/invoices/${id}`)
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}))
+		throw new Error(body.error ?? "견적서를 불러오는데 실패했습니다")
+	}
+	const { invoice } = await res.json()
 	return invoice
 }
 
@@ -78,6 +83,7 @@ interface InvoiceDetailProps {
 }
 
 export function InvoiceDetail({ id }: InvoiceDetailProps) {
+	const [isDownloading, setIsDownloading] = useState(false)
 	const { data: invoice, isPending, isError, error, refetch } = useQuery({
 		queryKey: ["invoice", id],
 		queryFn: () => fetchInvoice(id),
@@ -86,7 +92,7 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 
 	if (isPending) {
 		return (
-			<div className="max-w-4xl mx-auto p-8 space-y-6">
+			<div className="max-w-4xl mx-auto py-8 px-4 md:px-8 space-y-6">
 				{/* 상단 액션 영역 스켈레톤 */}
 				<div className="flex justify-between items-center">
 					<Skeleton className="h-6 w-32 rounded-full" />
@@ -138,7 +144,7 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 							<Skeleton className="h-4 w-24" />
 						</div>
 						{[1, 2, 3].map((i) => (
-							<div key={i} className="flex gap-4 border-t border-gray-100 pt-3">
+							<div key={i} className="flex gap-4 border-t border-border/50 pt-3">
 								<Skeleton className="h-4 flex-1" />
 								<Skeleton className="h-4 w-12" />
 								<Skeleton className="h-4 w-24" />
@@ -170,7 +176,7 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 
 	if (isError) {
 		return (
-			<div className="max-w-4xl mx-auto p-8">
+			<div className="max-w-4xl mx-auto py-8 px-4 md:px-8">
 				<Alert variant="destructive">
 					<AlertDescription className="flex items-center justify-between">
 						<span>{error?.message}</span>
@@ -192,20 +198,28 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 	const BannerIcon = bannerConfig.icon
 
 	return (
-		<div className="max-w-4xl mx-auto p-8">
-			{/* 상단 액션 영역 */}
-			<div className="flex items-center justify-between mb-6">
+		<div className="max-w-4xl mx-auto py-8 px-4 md:px-8">
+			{/* 상단 액션 영역 - 인쇄 시 숨김 */}
+			<div className="flex items-center justify-between mb-6 print:hidden">
 				<InvoiceStatusBadge status={invoice.status} />
-				<Button variant="outline" disabled>
-					<Download className="size-4 mr-2" />
-					PDF 다운로드 (준비 중)
+				<Button
+					variant="outline"
+					disabled={isDownloading}
+					onClick={() => handlePdfDownload(id, invoice.invoiceNumber, setIsDownloading)}
+				>
+					{isDownloading ? (
+						<Loader2 className="size-4 mr-2 animate-spin" />
+					) : (
+						<Download className="size-4 mr-2" />
+					)}
+					PDF 다운로드
 				</Button>
 			</div>
 
-			{/* 상태별 배너 */}
+			{/* 상태별 배너 - 인쇄 시 숨김 */}
 			<div
 				className={cn(
-					"flex items-center gap-3 px-4 py-3 rounded-lg border mb-6 text-sm font-medium",
+					"flex items-center gap-3 px-4 py-3 rounded-lg border mb-6 text-sm font-medium print:hidden",
 					bannerConfig.className
 				)}
 			>
@@ -213,67 +227,67 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 				<span>{bannerConfig.message}</span>
 			</div>
 
-			{/* 견적서 본문 - 인쇄 친화적 흰색 배경 */}
-			<div className="bg-white text-gray-900 rounded-lg shadow-sm border p-10 space-y-8 print:shadow-none print:border-none">
+			{/* 견적서 본문 - 테마 대응 + 인쇄 친화적 */}
+			<div className="bg-card text-card-foreground rounded-lg shadow-sm border p-10 space-y-8 print:shadow-none print:border-none print:p-0">
 
 				{/* 헤더 */}
 				<div className="flex justify-between items-start gap-8">
 					{/* 좌측: 제목 + 번호 */}
 					<div>
-						<h1 className="text-4xl font-extrabold tracking-tight text-gray-900">견적서</h1>
-						<p className="text-gray-400 mt-1.5 text-sm font-mono">{invoice.invoiceNumber}</p>
+						<h1 className="text-4xl font-extrabold tracking-tight text-foreground">견적서</h1>
+						<p className="text-muted-foreground mt-1.5 text-sm font-mono">{invoice.invoiceNumber}</p>
 					</div>
 
 					{/* 우측: 발행인 정보 */}
 					<div className="text-right space-y-0.5">
-						<p className="font-bold text-gray-900 text-base">{ISSUER_INFO.businessName}</p>
-						<p className="text-sm text-gray-500">사업자번호: {ISSUER_INFO.businessNumber}</p>
-						<p className="text-sm text-gray-500">{ISSUER_INFO.address}</p>
-						<p className="text-sm text-gray-500">{ISSUER_INFO.name}</p>
-						<p className="text-sm text-gray-500">{ISSUER_INFO.email}</p>
-						<p className="text-sm text-gray-500">{ISSUER_INFO.phone}</p>
+						<p className="font-bold text-foreground text-base">{ISSUER_INFO.businessName}</p>
+						<p className="text-sm text-muted-foreground">사업자번호: {ISSUER_INFO.businessNumber}</p>
+						<p className="text-sm text-muted-foreground">{ISSUER_INFO.address}</p>
+						<p className="text-sm text-muted-foreground">{ISSUER_INFO.name}</p>
+						<p className="text-sm text-muted-foreground">{ISSUER_INFO.email}</p>
+						<p className="text-sm text-muted-foreground">{ISSUER_INFO.phone}</p>
 					</div>
 				</div>
 
 				{/* 구분선 */}
-				<div className="border-t border-gray-200" />
+				<div className="border-t border-border" />
 
 				{/* 발행 정보 + 거래처 정보 - 2단 그리드 */}
-				<div className="grid grid-cols-2 gap-8">
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-8">
 					{/* 좌측: 거래처 정보 */}
 					<div className="space-y-1">
-						<p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">청구 대상</p>
-						<p className="font-bold text-xl text-gray-900">{invoice.clientName}</p>
+						<p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">청구 대상</p>
+						<p className="font-bold text-xl text-foreground">{invoice.clientName}</p>
 					</div>
 
 					{/* 우측: 날짜 + 상태 */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
-							<span className="text-xs text-gray-400 uppercase tracking-widest font-semibold">발행일</span>
-							<span className="text-sm font-medium text-gray-700">{formatDate(invoice.issueDate)}</span>
+							<span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">발행일</span>
+							<span className="text-sm font-medium text-foreground">{formatDate(invoice.issueDate)}</span>
 						</div>
 						{invoice.validUntil && (
 							<div className="flex items-center justify-between">
-								<span className="text-xs text-gray-400 uppercase tracking-widest font-semibold">유효기간</span>
-								<span className="text-sm font-medium text-gray-700">{formatDate(invoice.validUntil)}</span>
+								<span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">유효기간</span>
+								<span className="text-sm font-medium text-foreground">{formatDate(invoice.validUntil)}</span>
 							</div>
 						)}
 						<div className="flex items-center justify-between">
-							<span className="text-xs text-gray-400 uppercase tracking-widest font-semibold">상태</span>
+							<span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">상태</span>
 							<InvoiceStatusBadge status={invoice.status} />
 						</div>
 					</div>
 				</div>
 
 				{/* 항목 테이블 */}
-				<div className="border-t border-gray-200 pt-6">
-					<table className="w-full text-sm">
+				<div className="border-t border-border pt-6 overflow-x-auto">
+					<table className="w-full text-sm min-w-[500px]">
 						<thead>
-							<tr className="border-b-2 border-gray-200">
-								<th className="text-left py-3 font-semibold text-gray-500 text-xs uppercase tracking-widest">항목명</th>
-								<th className="text-right py-3 font-semibold text-gray-500 text-xs uppercase tracking-widest w-16">수량</th>
-								<th className="text-right py-3 font-semibold text-gray-500 text-xs uppercase tracking-widest w-32">단가</th>
-								<th className="text-right py-3 font-semibold text-gray-500 text-xs uppercase tracking-widest w-32">금액</th>
+							<tr className="border-b-2 border-border">
+								<th className="text-left py-3 font-semibold text-muted-foreground text-xs uppercase tracking-widest">항목명</th>
+								<th className="text-right py-3 font-semibold text-muted-foreground text-xs uppercase tracking-widest w-16">수량</th>
+								<th className="text-right py-3 font-semibold text-muted-foreground text-xs uppercase tracking-widest w-32">단가</th>
+								<th className="text-right py-3 font-semibold text-muted-foreground text-xs uppercase tracking-widest w-32">금액</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -281,14 +295,14 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 								<tr
 									key={item.id}
 									className={cn(
-										"border-b border-gray-100",
-										index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+										"border-b border-border/50 transition-colors hover:bg-muted/30 print:bg-transparent",
+										index % 2 === 1 && "bg-muted/50"
 									)}
 								>
-									<td className="py-3.5 text-gray-800">{item.name}</td>
-									<td className="py-3.5 text-right text-gray-600">{item.quantity}</td>
-									<td className="py-3.5 text-right text-gray-600">{formatKRW(item.unitPrice)}</td>
-									<td className="py-3.5 text-right font-semibold text-gray-900">{formatKRW(item.amount)}</td>
+									<td className="py-3.5 text-foreground">{item.name}</td>
+									<td className="py-3.5 text-right text-muted-foreground">{item.quantity}</td>
+									<td className="py-3.5 text-right text-muted-foreground">{formatKRW(item.unitPrice)}</td>
+									<td className="py-3.5 text-right font-semibold text-foreground">{formatKRW(item.amount)}</td>
 								</tr>
 							))}
 						</tbody>
@@ -297,16 +311,16 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 
 				{/* 합계 영역 */}
 				<div className="flex justify-end">
-					<div className="w-72 space-y-2 text-sm">
+					<div className="w-full sm:w-72 space-y-2 text-sm">
 						<div className="flex justify-between items-center py-1.5">
-							<span className="text-gray-500">소계</span>
-							<span className="text-gray-700">{formatKRW(subtotal)}</span>
+							<span className="text-muted-foreground">소계</span>
+							<span className="text-foreground">{formatKRW(subtotal)}</span>
 						</div>
-						<div className="flex justify-between items-center py-1.5 border-b border-gray-200">
-							<span className="text-gray-500">부가세 (10%)</span>
-							<span className="text-gray-700">{formatKRW(tax)}</span>
+						<div className="flex justify-between items-center py-1.5 border-b border-border">
+							<span className="text-muted-foreground">부가세 (10%)</span>
+							<span className="text-foreground">{formatKRW(tax)}</span>
 						</div>
-						<div className="flex justify-between items-center py-2.5 bg-gray-900 text-white rounded-md px-3 mt-1">
+						<div className="flex justify-between items-center py-2.5 bg-primary text-primary-foreground rounded-lg px-3 mt-1">
 							<span className="font-bold text-sm">최종 합계</span>
 							<span className="font-bold text-base">{formatKRW(total)}</span>
 						</div>
@@ -314,10 +328,10 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 				</div>
 
 				{/* 결제 정보 */}
-				<div className="border-t border-gray-200 pt-6">
-					<div className="bg-gray-50 rounded-md p-4 space-y-1">
-						<p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">계좌 정보</p>
-						<p className="text-sm text-gray-700 font-medium">{ISSUER_INFO.bankInfo}</p>
+				<div className="border-t border-border pt-6">
+					<div className="bg-muted rounded-lg p-4 space-y-1">
+						<p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-2">계좌 정보</p>
+						<p className="text-sm text-foreground font-medium">{ISSUER_INFO.bankInfo}</p>
 					</div>
 				</div>
 			</div>
