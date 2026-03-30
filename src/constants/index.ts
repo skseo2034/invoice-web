@@ -28,10 +28,10 @@ export const SIDEBAR_ITEMS: NavItem[] = [
 	{ label: "견적서", href: "/dashboard/invoices", icon: FileText },
 ]
 
-// 대시보드 통계 카드 데이터
-export const DASHBOARD_STATS = [
-	{ label: "전체 견적서", value: "0건", icon: FileText },
-	{ label: "발송됨", value: "0건", icon: Send },
-	{ label: "승인됨", value: "0건", icon: CheckCircle },
-	{ label: "총 금액", value: "₩0", icon: DollarSign },
+// 대시보드 통계 카드 설정 (아이콘/라벨만 정의, 값은 API에서 조회)
+export const DASHBOARD_STAT_CONFIG = [
+	{ key: "total", label: "전체 견적서", icon: FileText, isCurrency: false },
+	{ key: "sent", label: "발송됨", icon: Send, isCurrency: false },
+	{ key: "approved", label: "승인됨", icon: CheckCircle, isCurrency: false },
+	{ key: "totalAmount", label: "총 금액", icon: DollarSign, isCurrency: true },
 ] as const

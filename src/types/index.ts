@@ -53,6 +53,15 @@ export interface InvoiceListItem {
 	totalAmount: number
 }
 
+// 대시보드 통계 응답 타입
+export interface DashboardStats {
+	total: number
+	sent: number
+	approved: number
+	totalAmount: number
+	recentInvoices: InvoiceListItem[]
+}
+
 // 발행인 정보 타입
 export interface IssuerInfo {
 	name: string

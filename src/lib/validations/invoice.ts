@@ -22,3 +22,16 @@ export const invoiceSchema = z.object({
 
 export type InvoiceInput = z.infer<typeof invoiceSchema>
 export type InvoiceItemInput = z.infer<typeof invoiceItemSchema>
+
+// 견적서 목록 쿼리 파라미터 스키마
+const VALID_STATUSES = ["초안", "대기", "발송", "승인", "거절"] as const
+const VALID_SORT_BY = ["issueDate", "totalAmount"] as const
+const VALID_SORT_ORDER = ["asc", "desc"] as const
+
+export const invoiceListQuerySchema = z.object({
+	status: z.enum(VALID_STATUSES).optional(),
+	sortBy: z.enum(VALID_SORT_BY).optional(),
+	sortOrder: z.enum(VALID_SORT_ORDER).optional(),
+})
+
+export type InvoiceListQuery = z.infer<typeof invoiceListQuerySchema>

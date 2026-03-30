@@ -7,7 +7,7 @@ export function Footer() {
 	const currentYear = new Date().getFullYear()
 
 	return (
-		<footer className="w-full border-t bg-background">
+		<footer className="w-full border-t bg-background print:hidden">
 			<div className="container mx-auto max-w-screen-xl px-4 py-8">
 				<div className="flex flex-col items-center justify-between gap-4 md:flex-row">
 					{/* 브랜드 정보 */}

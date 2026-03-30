@@ -129,6 +129,34 @@
     --primary-foreground: white;
     --border: oklch(0.8 0 0);
   }
+
+  /* 페이지 여백 */
+  @page {
+    margin: 15mm;
+  }
+
+  /* 레이아웃 요소 숨김 */
+  header, footer, nav, [data-sidebar] {
+    display: none !important;
+  }
+
+  /* body 초기화 */
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 링크 URL 표시 방지 */
+  a[href]::after {
+    content: none !important;
+  }
+
+  /* 합계 영역 페이지 잘림 방지 */
+  .print\:break-inside-avoid {
+    break-inside: avoid;
+  }
 }
 
 @layer base {

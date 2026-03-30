@@ -2,29 +2,16 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Download, RefreshCw, FileEdit, Clock, Send, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { Download, RefreshCw, FileEdit, Clock, Send, CheckCircle, XCircle, Loader2, Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { InvoiceStatusBadge } from "@/components/common/status-badge"
 import { ISSUER_INFO } from "@/constants/invoice"
 import { handlePdfDownload } from "@/lib/download-pdf"
+import { formatKRW, formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { Invoice, InvoiceStatus } from "@/types"
-
-// 원화 포맷팅
-function formatKRW(amount: number): string {
-	return new Intl.NumberFormat("ko-KR", {
-		style: "currency",
-		currency: "KRW",
-	}).format(amount)
-}
-
-// 날짜 포맷팅
-function formatDate(dateStr?: string): string {
-	if (!dateStr) return "-"
-	return new Date(dateStr).toLocaleDateString("ko-KR")
-}
 
 async function fetchInvoice(id: string): Promise<Invoice> {
 	const res = await fetch(`/api/invoices/${id}`)
@@ -214,6 +201,13 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 					)}
 					PDF 다운로드
 				</Button>
+				<Button
+					variant="outline"
+					onClick={() => window.print()}
+				>
+					<Printer className="size-4 mr-2" />
+					인쇄
+				</Button>
 			</div>
 
 			{/* 상태별 배너 - 인쇄 시 숨김 */}
@@ -310,7 +304,7 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 				</div>
 
 				{/* 합계 영역 */}
-				<div className="flex justify-end">
+				<div className="flex justify-end print:break-inside-avoid">
 					<div className="w-full sm:w-72 space-y-2 text-sm">
 						<div className="flex justify-between items-center py-1.5">
 							<span className="text-muted-foreground">소계</span>

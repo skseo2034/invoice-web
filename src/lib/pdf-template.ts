@@ -1,18 +1,5 @@
 import type { Invoice, IssuerInfo } from "@/types"
-
-// 원화 포맷팅 (서버용)
-function formatKRW(amount: number): string {
-	return new Intl.NumberFormat("ko-KR", {
-		style: "currency",
-		currency: "KRW",
-	}).format(amount)
-}
-
-// 날짜 포맷팅 (서버용)
-function formatDate(dateStr?: string): string {
-	if (!dateStr) return "-"
-	return new Date(dateStr).toLocaleDateString("ko-KR")
-}
+import { formatKRW, formatDate } from "@/lib/format"
 
 // 상태별 배지 색상
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
