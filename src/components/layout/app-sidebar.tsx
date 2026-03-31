@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { FileText, LogOut } from "lucide-react"
 import {
 	Sidebar,
 	SidebarContent,
@@ -15,21 +16,30 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ThemeToggle } from "@/components/common/theme-toggle"
 import { SIDEBAR_ITEMS, SITE_CONFIG } from "@/constants"
+import { ISSUER_INFO } from "@/constants/invoice"
 
 // shadcn Sidebar 기반 앱 사이드바
 // - 모바일에서 Sheet로 자동 전환 (shadcn Sidebar 내장 기능)
 // - 현재 경로에 따라 활성 메뉴 강조
 export function AppSidebar() {
 	const pathname = usePathname()
+	const router = useRouter()
+
+	async function handleLogout() {
+		await fetch("/api/auth/logout", { method: "POST" })
+		router.push("/login")
+	}
 
 	return (
 		<Sidebar>
 			{/* 사이드바 상단: 로고/브랜드 */}
 			<SidebarHeader className="border-b px-4 py-3">
 				<Link href="/" className="flex items-center gap-2 font-semibold">
-					<span className="text-primary">⚡</span>
+					<FileText className="size-5 text-primary" />
 					<span>{SITE_CONFIG.name}</span>
 				</Link>
 			</SidebarHeader>
@@ -69,16 +79,33 @@ export function AppSidebar() {
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<Avatar className="size-8">
-							<AvatarFallback>U</AvatarFallback>
+							{/* ISSUER_INFO.name 첫 글자를 아바타 폴백으로 사용 */}
+							<AvatarFallback>{ISSUER_INFO.name[0]}</AvatarFallback>
 						</Avatar>
 						<div className="flex flex-col">
-							<span className="text-sm font-medium">사용자</span>
+							<span className="text-sm font-medium">{ISSUER_INFO.name}</span>
 							<span className="text-xs text-muted-foreground">
-								user@example.com
+								{ISSUER_INFO.email}
 							</span>
 						</div>
 					</div>
-					<ThemeToggle />
+					<div className="flex items-center gap-1">
+						<ThemeToggle />
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="size-8"
+									onClick={handleLogout}
+									aria-label="로그아웃"
+								>
+									<LogOut className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>로그아웃</TooltipContent>
+						</Tooltip>
+					</div>
 				</div>
 			</SidebarFooter>
 		</Sidebar>

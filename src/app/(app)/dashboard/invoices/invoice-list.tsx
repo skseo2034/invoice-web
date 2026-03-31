@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { RefreshCw, ExternalLink, Copy, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react"
+import { RefreshCw, ExternalLink, Copy, Check, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { InvoiceStatusBadge } from "@/components/common/status-badge"
 import { handlePdfDownload } from "@/lib/download-pdf"
 import { formatKRW, formatDate } from "@/lib/format"
@@ -64,30 +65,65 @@ async function fetchInvoices(
 	return invoices
 }
 
-// 링크 복사 핸들러
-function handleCopyLink(id: string) {
-	const url = `${window.location.origin}/invoices/${id}`
-	navigator.clipboard.writeText(url)
-	toast.success("링크가 복사되었습니다")
-}
-
-// 개별 행의 PDF 다운로드 버튼 (각각 독립 로딩 상태)
+// 개별 행의 PDF 다운로드 버튼 (각각 독립 로딩 상태, Tooltip 포함)
 function PdfDownloadButton({ invoiceId, invoiceNumber }: { invoiceId: string; invoiceNumber: string }) {
 	const [isDownloading, setIsDownloading] = useState(false)
 	return (
-		<Button
-			variant="ghost"
-			size="icon"
-			disabled={isDownloading}
-			onClick={() => handlePdfDownload(invoiceId, invoiceNumber, setIsDownloading)}
-			aria-label="PDF 다운로드"
-		>
-			{isDownloading ? (
-				<Loader2 className="size-4 animate-spin" />
-			) : (
-				<Download className="size-4" />
-			)}
-		</Button>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={isDownloading}
+					onClick={() => handlePdfDownload(invoiceId, invoiceNumber, setIsDownloading)}
+					aria-label="PDF 다운로드"
+				>
+					{isDownloading ? (
+						<Loader2 className="size-4 animate-spin" />
+					) : (
+						<Download className="size-4" />
+					)}
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>PDF 다운로드</TooltipContent>
+		</Tooltip>
+	)
+}
+
+// 링크 복사 버튼 (copied 상태에 따라 아이콘 전환, Tooltip 포함)
+function CopyLinkButton({ invoiceId }: { invoiceId: string }) {
+	const [copied, setCopied] = useState(false)
+
+	async function handleCopy() {
+		const url = `${window.location.origin}/invoices/${invoiceId}`
+		try {
+			await navigator.clipboard.writeText(url)
+			setCopied(true)
+			toast.success("링크가 복사되었습니다", { description: url })
+			setTimeout(() => setCopied(false), 2000)
+		} catch {
+			toast.error("복사에 실패했습니다")
+		}
+	}
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={handleCopy}
+					aria-label="링크 복사"
+				>
+					{copied ? (
+						<Check className="size-4 text-green-500" />
+					) : (
+						<Copy className="size-4" />
+					)}
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>링크 복사</TooltipContent>
+		</Tooltip>
 	)
 }
 
@@ -330,28 +366,28 @@ export function InvoiceList() {
 											invoiceId={invoice.id}
 											invoiceNumber={invoice.invoiceNumber}
 										/>
-										<Button
-											variant="ghost"
-											size="icon"
-											asChild
-										>
-											<a
-												href={`/invoices/${invoice.id}`}
-												target="_blank"
-												rel="noopener noreferrer"
-												aria-label="견적서 보기"
-											>
-												<ExternalLink className="size-4" />
-											</a>
-										</Button>
-										<Button
-											variant="ghost"
-											size="icon"
-											onClick={() => handleCopyLink(invoice.id)}
-											aria-label="링크 복사"
-										>
-											<Copy className="size-4" />
-										</Button>
+										{/* 새 탭에서 보기 버튼 */}
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													asChild
+												>
+													<a
+														href={`/invoices/${invoice.id}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														aria-label="견적서 보기"
+													>
+														<ExternalLink className="size-4" />
+													</a>
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>새 탭에서 보기</TooltipContent>
+										</Tooltip>
+										{/* 링크 복사 버튼 (copied 상태 피드백 포함) */}
+										<CopyLinkButton invoiceId={invoice.id} />
 									</div>
 								</TableCell>
 							</TableRow>

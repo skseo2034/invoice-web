@@ -22,3 +22,10 @@ export const registerSchema = z
 	})
 
 export type RegisterInput = z.infer<typeof registerSchema>
+
+// 관리자 로그인 스키마 (환경변수 기반 패스워드 인증)
+export const adminLoginSchema = z.object({
+	password: z.string().min(1, "비밀번호를 입력하세요"),
+})
+
+export type AdminLoginInput = z.infer<typeof adminLoginSchema>
