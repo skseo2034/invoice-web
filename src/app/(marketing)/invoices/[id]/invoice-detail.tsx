@@ -6,10 +6,13 @@ import { Download, RefreshCw, FileEdit, Clock, Send, CheckCircle, XCircle, Loade
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CopyLinkButton } from "@/components/common/copy-link-button"
+import { ShareButton } from "@/components/common/share-button"
 import { InvoiceStatusBadge } from "@/components/common/status-badge"
 import { ISSUER_INFO } from "@/constants/invoice"
 import { handlePdfDownload } from "@/lib/download-pdf"
 import { formatKRW, formatDate } from "@/lib/format"
+import { getInvoiceUrl } from "@/lib/url"
 import { cn } from "@/lib/utils"
 import type { Invoice, InvoiceStatus } from "@/types"
 
@@ -189,26 +192,37 @@ export function InvoiceDetail({ id }: InvoiceDetailProps) {
 			{/* 상단 액션 영역 - 인쇄 시 숨김 */}
 			<div className="flex items-center justify-between mb-6 print:hidden">
 				<InvoiceStatusBadge status={invoice.status} />
-				<Button
-					variant="outline"
-					disabled={isDownloading}
-					onClick={() => handlePdfDownload(id, invoice.invoiceNumber, setIsDownloading)}
-				>
-					{isDownloading ? (
-						<Loader2 className="size-4 mr-2 animate-spin" />
-					) : (
-						<Download className="size-4 mr-2" />
-					)}
-					PDF 다운로드
-				</Button>
-				<Button
-					variant="outline"
-					onClick={() => window.print()}
-				>
-					<Printer className="size-4 mr-2" />
-					인쇄
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						disabled={isDownloading}
+						onClick={() => handlePdfDownload(id, invoice.invoiceNumber, setIsDownloading)}
+					>
+						{isDownloading ? (
+							<Loader2 className="size-4 mr-2 animate-spin" />
+						) : (
+							<Download className="size-4 mr-2" />
+						)}
+						PDF 다운로드
+					</Button>
+					<Button
+						variant="outline"
+						onClick={() => window.print()}
+					>
+						<Printer className="size-4 mr-2" />
+						인쇄
+					</Button>
+					<ShareButton
+						url={getInvoiceUrl(id)}
+						title={`견적서 ${invoice.invoiceNumber}`}
+						description={`${invoice.clientName} - ${formatKRW(invoice.totalAmount)}`}
+						variant="default"
+					/>
+				</div>
 			</div>
+
+			{/* 공유 URL 표시 영역 - 인쇄 시 숨김 */}
+			<CopyLinkButton url={getInvoiceUrl(id)} variant="with-input" className="mb-6 print:hidden" />
 
 			{/* 상태별 배너 - 인쇄 시 숨김 */}
 			<div

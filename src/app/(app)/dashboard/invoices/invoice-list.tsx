@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { RefreshCw, ExternalLink, Copy, Check, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react"
-import { toast } from "sonner"
+import { RefreshCw, ExternalLink, Download, Loader2, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -25,9 +24,12 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { CopyLinkButton } from "@/components/common/copy-link-button"
+import { ShareButton } from "@/components/common/share-button"
 import { InvoiceStatusBadge } from "@/components/common/status-badge"
 import { handlePdfDownload } from "@/lib/download-pdf"
 import { formatKRW, formatDate } from "@/lib/format"
+import { getInvoiceUrl, getInvoiceShortPath } from "@/lib/url"
 import { useDebounce } from "@/hooks/use-debounce"
 import type { InvoiceListItem, InvoiceStatus } from "@/types"
 
@@ -86,43 +88,6 @@ function PdfDownloadButton({ invoiceId, invoiceNumber }: { invoiceId: string; in
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent>PDF 다운로드</TooltipContent>
-		</Tooltip>
-	)
-}
-
-// 링크 복사 버튼 (copied 상태에 따라 아이콘 전환, Tooltip 포함)
-function CopyLinkButton({ invoiceId }: { invoiceId: string }) {
-	const [copied, setCopied] = useState(false)
-
-	async function handleCopy() {
-		const url = `${window.location.origin}/invoices/${invoiceId}`
-		try {
-			await navigator.clipboard.writeText(url)
-			setCopied(true)
-			toast.success("링크가 복사되었습니다", { description: url })
-			setTimeout(() => setCopied(false), 2000)
-		} catch {
-			toast.error("복사에 실패했습니다")
-		}
-	}
-
-	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={handleCopy}
-					aria-label="링크 복사"
-				>
-					{copied ? (
-						<Check className="size-4 text-green-500" />
-					) : (
-						<Copy className="size-4" />
-					)}
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>링크 복사</TooltipContent>
 		</Tooltip>
 	)
 }
@@ -347,6 +312,7 @@ export function InvoiceList() {
 								currentSortOrder={sortOrder}
 								onSort={handleSort}
 							/>
+							<TableHead>링크</TableHead>
 							<TableHead className="text-right">액션</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -360,6 +326,11 @@ export function InvoiceList() {
 									<InvoiceStatusBadge status={invoice.status} />
 								</TableCell>
 								<TableCell>{formatDate(invoice.issueDate)}</TableCell>
+								<TableCell>
+									<span className="text-xs text-muted-foreground font-mono">
+										{getInvoiceShortPath(invoice.id)}
+									</span>
+								</TableCell>
 								<TableCell className="text-right">
 									<div className="flex justify-end gap-1">
 										<PdfDownloadButton
@@ -387,7 +358,12 @@ export function InvoiceList() {
 											<TooltipContent>새 탭에서 보기</TooltipContent>
 										</Tooltip>
 										{/* 링크 복사 버튼 (copied 상태 피드백 포함) */}
-										<CopyLinkButton invoiceId={invoice.id} />
+										<CopyLinkButton url={getInvoiceUrl(invoice.id)} />
+										{/* 공유 버튼 */}
+										<ShareButton
+											url={getInvoiceUrl(invoice.id)}
+											title={`견적서 ${invoice.invoiceNumber}`}
+										/>
 									</div>
 								</TableCell>
 							</TableRow>
