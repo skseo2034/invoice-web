@@ -1,14 +1,24 @@
 "use client"
 
-import { Moon, Sun } from "lucide-react"
+import { Moon, Sun, Monitor, Check } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-// next-themes 기반 다크/라이트 모드 토글 버튼
-// mounted 패턴: SSR에서 현재 테마를 알 수 없으므로 클라이언트 마운트 후 렌더링
+const THEME_OPTIONS = [
+	{ value: "light", label: "라이트", icon: Sun },
+	{ value: "dark", label: "다크", icon: Moon },
+	{ value: "system", label: "시스템", icon: Monitor },
+] as const
+
 export function ThemeToggle() {
-	const { theme, setTheme } = useTheme()
+	const { theme, setTheme, resolvedTheme } = useTheme()
 	const [mounted, setMounted] = useState(false)
 
 	// eslint-disable-next-line react-hooks/set-state-in-effect
@@ -28,18 +38,36 @@ export function ThemeToggle() {
 	}
 
 	return (
-		<Button
-			variant="ghost"
-			size="icon"
-			onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-			aria-label={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
-			className="size-9"
-		>
-			{theme === "dark" ? (
-				<Sun className="size-4" />
-			) : (
-				<Moon className="size-4" />
-			)}
-		</Button>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					aria-label="테마 전환"
+					className="size-9"
+				>
+					{resolvedTheme === "dark" ? (
+						<Moon className="size-4" />
+					) : (
+						<Sun className="size-4" />
+					)}
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				{THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+					<DropdownMenuItem
+						key={value}
+						onClick={() => setTheme(value)}
+						className="flex items-center justify-between"
+					>
+						<span className="flex items-center gap-2">
+							<Icon className="size-4" />
+							{label}
+						</span>
+						{theme === value && <Check className="size-4" />}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	)
 }

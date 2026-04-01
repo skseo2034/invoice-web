@@ -15,7 +15,7 @@ export function InvoiceStatusBadge({ status, className }: InvoiceStatusBadgeProp
 		<Badge
 			variant={variant}
 			className={cn(
-				status === "승인" && "bg-green-100 text-green-800 hover:bg-green-100",
+				status === "승인" && "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-300 dark:hover:bg-green-900",
 				className
 			)}
 		>
