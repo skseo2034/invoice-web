@@ -1,9 +1,28 @@
 import type { Metadata } from "next"
+import dynamic from "next/dynamic"
 import { FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/common/page-header"
-import { DashboardContent } from "./dashboard-content"
 import Link from "next/link"
+
+// 대시보드 콘텐츠 레이지 로딩
+const DashboardContent = dynamic(
+	() => import("./dashboard-content").then((mod) => ({ default: mod.DashboardContent })),
+	{
+		loading: () => (
+			<div className="space-y-4 p-6">
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+					<Skeleton className="h-32 w-full" />
+					<Skeleton className="h-32 w-full" />
+					<Skeleton className="h-32 w-full" />
+					<Skeleton className="h-32 w-full" />
+				</div>
+				<Skeleton className="h-64 w-full" />
+			</div>
+		),
+	}
+)
 
 export const metadata: Metadata = {
 	title: "대시보드",

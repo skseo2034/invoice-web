@@ -6,7 +6,10 @@ import type { NextRequest } from "next/server"
 export function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl
 	const sessionCookie = request.cookies.get("admin_session")
-	const isAuthenticated = sessionCookie?.value === process.env.ADMIN_SESSION_SECRET
+
+	// 세션 쿠키 존재 여부 및 값 검증
+	const isAuthenticated = !!sessionCookie?.value
+		&& sessionCookie.value === process.env.ADMIN_SESSION_SECRET
 
 	// 대시보드 접근 시 인증 확인 → 미인증이면 /login으로
 	if (pathname.startsWith("/dashboard") && !isAuthenticated) {

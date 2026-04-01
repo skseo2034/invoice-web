@@ -15,6 +15,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
 				defaultOptions: {
 					queries: {
 						staleTime: 60 * 1000,
+						gcTime: 5 * 60 * 1000, // 5분 후 미사용 캐시 가비지 컬렉션
 						retry: 1,
 					},
 				},

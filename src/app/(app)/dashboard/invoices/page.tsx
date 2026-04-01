@@ -1,6 +1,21 @@
 import type { Metadata } from "next"
+import dynamic from "next/dynamic"
+import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeader } from "@/components/common/page-header"
-import { InvoiceList } from "./invoice-list"
+
+// 견적서 목록 레이지 로딩
+const InvoiceList = dynamic(
+	() => import("./invoice-list").then((mod) => ({ default: mod.InvoiceList })),
+	{
+		loading: () => (
+			<div className="space-y-4">
+				<Skeleton className="h-10 w-full" />
+				<Skeleton className="h-64 w-full" />
+				<Skeleton className="h-10 w-48" />
+			</div>
+		),
+	}
+)
 
 export const metadata: Metadata = {
 	title: "견적서 목록 | 견적서 시스템",
